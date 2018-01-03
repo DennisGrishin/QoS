@@ -2,17 +2,21 @@
   <head>
     <title>A Multiplayer Game</title>
     <style>
-      canvas {
-        width: 800px;
-        height: 600px;
-        border: 5px solid black;
-      }
+		body {
+			text-align: center;
+		}
+		canvas {
+			width: 800px;
+			height: 600px;
+			border: 1px solid black;
+		}
     </style>
 	<script src="/socket.io/socket.io.js"></script>
     <!--<script src="http://192.168.0.104:8080/socket.io/socket.io.js"></script>-->
 	<!--<script src="bower_components/socket.io-client/socket.io.js"></script>-->
   </head>
   <body>
+	<h1>Quarrel of Spheres</h1>
     <canvas id="canvas"></canvas>
   </body>
   <script src="/static/game.js"></script>
