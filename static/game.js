@@ -103,19 +103,20 @@ socket.on('state', function(game_state) {
 		context.fillRect(0, gun.width, gun.length, gun.width);
 		context.setTransform(1, 0, 0, 1, 0, 0);
 		
-		var bullet = game_state.bullets[id];
-		if (bullet) {
-			context.fillStyle = 'yellow';
-			context.beginPath();
-			context.arc(bullet.x, bullet.y, 4, 0, 2*Math.PI);
-			context.fill();
-		}
-		
 		context.fillStyle = 'black';
 		context.font = '12px serif';
 		context.textAlign = 'center';
 		context.fillText(player.score, x, y + 4);
-		
+	}
+	for (var pack_id in game_state.bullets) {
+		var bullet_pack = game_state.bullets[pack_id];
+		if (bullet_pack) for (var bullet_id in bullet_pack) {
+			var bullet = bullet_pack[bullet_id];
+			context.fillStyle = 'blue';
+			context.beginPath();
+			context.arc(bullet.x, bullet.y, 4, 0, 2*Math.PI);
+			context.fill();
+		}
 	}
 	socket.emit('movement', movement);
 });

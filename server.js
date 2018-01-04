@@ -35,11 +35,18 @@ var RIGHT_BORDER = 800;
 var TOP_BORDER = 0;
 var BOTTOM_BORDER = 600;
 
-var players = {};
-var bullets = {};
+
 var game_state = {
 	players: {},
 	bullets: {}
+};
+
+function obj_size(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
 };
 
 function spawn() {
@@ -51,7 +58,8 @@ function spawn() {
 		r: Math.floor(Math.random()*256),
 		g: Math.floor(Math.random()*256),
 		b: Math.floor(Math.random()*256),
-		score: 0
+		score: 0,
+		reload_time: 0 
 	};
 }
 
@@ -104,48 +112,54 @@ io.on('connection', function(socket) {
 		
 		// Bullet
 		var bullet_speed = step*1.5;
-		var bullet = game_state.bullets[socket.id];
-		if (bullet) {
+		if (!game_state.bullets[socket.id]) {
+			game_state.bullets[socket.id] = {};
+		}
+		var bullet_pack = game_state.bullets[socket.id];
+		for (var bullet_id in bullet_pack) {
+			bullet = bullet_pack[bullet_id];
 			bullet.x += bullet_speed*Math.cos(bullet.direction);
 			bullet.y -= bullet_speed*Math.sin(bullet.direction);
 			if (bullet.x < LEFT_BORDER || 
 				bullet.x > RIGHT_BORDER ||
 				bullet.y < TOP_BORDER ||
 				bullet.y > BOTTOM_BORDER) {
-				delete game_state.bullets[socket.id];
+				delete bullet_pack[bullet_id];
 			}
 		}
-		else {
-			if (data.space) {
-				var dist = 35;
-				var shift = 10;
-				//var ini_x = player.x + shift;
-				//var ini_y = player.y - dist;
-				game_state.bullets[socket.id] = {
-					x: player.x + shift*Math.sin(player.direction) + dist*Math.cos(player.direction),
-					y: player.y + shift*Math.cos(player.direction) - dist*Math.sin(player.direction),
-					direction: player.direction
-				}
+		var shoot_interval = 15;
+		//io.sockets.emit('message', ' ' + player.reload_time);
+		if (data.space && player.reload_time > shoot_interval) {
+			player.reload_time = 0;
+			var dist = 35;
+			var shift = 10;
+			game_state.bullets[socket.id][Math.random()*1000] = {
+				x: player.x + shift*Math.sin(player.direction) + dist*Math.cos(player.direction),
+				y: player.y + shift*Math.cos(player.direction) - dist*Math.sin(player.direction),
+				direction: player.direction
 			}
 		}
+		player.reload_time += 1;
 		
 		// Destroy conditions
-		for (var id in game_state.bullets) {
-			var killer = game_state.bullets[id];
-			var relpos = {
-				x: killer.x - player.x,
-				y: killer.y - player.y
-			}
-			if (relpos.x*relpos.x + relpos.y*relpos.y < size*size/4) {
-				//player.x = 300;
-				//player.y = 300;
-				//io.sockets.emit('message', 'hi!');
-				if (game_state.players[id]) {
-					game_state.players[id].score += 1;
+		for (var pack_id in game_state.bullets) {
+			for (var bullet_id in game_state.bullets[pack_id]) {
+				var killer = game_state.bullets[pack_id][bullet_id];
+				var relpos = {
+					x: killer.x - player.x,
+					y: killer.y - player.y
 				}
-				respawn(game_state.players[socket.id]);
+				if (relpos.x*relpos.x + relpos.y*relpos.y < size*size/4) {
+					//player.x = 300;
+					//player.y = 300;
+					//io.sockets.emit('message', 'hi!');
+					if (game_state.players[pack_id]) {
+						game_state.players[pack_id].score += 1;
+					}
+					respawn(game_state.players[socket.id]);
+				}
+				//io.sockets.emit('message', ' ' + Math.sqrt(relpos.x*relpos.x + relpos.y*relpos.y));
 			}
-			//io.sockets.emit('message', ' ' + Math.sqrt(relpos.x*relpos.x + relpos.y*relpos.y));
 		}
 	});
 	
